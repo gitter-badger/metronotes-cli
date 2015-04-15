@@ -5,17 +5,17 @@ import sys
 import argparse
 import logging
 
-from counterpartylib.lib import log
+from metronoteslib.lib import log
 logger = logging.getLogger(__name__)
 log.set_up(logger)
 
-from counterpartylib import server
-from counterpartylib.lib import config
-from counterpartycli.util import add_config_arguments
-from counterpartycli.setup import bootstrap, generate_config_files
-from counterpartycli import APP_VERSION
+from metronoteslib import server
+from metronoteslib.lib import config
+from metronotescli.util import add_config_arguments
+from metronotescli.setup import bootstrap, generate_config_files
+from metronotescli import APP_VERSION
 
-APP_NAME = 'counterparty-server'
+APP_NAME = 'metronotes-server'
 
 CONFIG_ARGS = [
     [('--testnet',), {'action': 'store_true', 'default': False, 'help': 'use {} testnet addresses and block numbers'.format(config.BTC_NAME)}],
@@ -36,7 +36,7 @@ CONFIG_ARGS = [
     [('--rpc-allow-cors',), {'action': 'store_true', 'default': True, 'help': 'Allow ajax cross domain request'}],
 
     [('-v', '--verbose'), {'dest': 'verbose', 'action': 'store_true', 'default': False, 'help': 'sets log level to DEBUG instead of WARNING'}],
-    [('--testcoin',), {'action': 'store_true', 'default': False, 'help': 'use the test {} network on every blockchain'.format(config.XCP_NAME)}],
+    [('--testcoin',), {'action': 'store_true', 'default': False, 'help': 'use the test {} network on every blockchain'.format(config.XMN_NAME)}],
     [('--force',), {'action': 'store_true', 'default': False, 'help': 'skip backend check, version check, process lock (NOT FOR USE ON PRODUCTION SYSTEMS)'}],
 
     [('--database-file',), {'default': None, 'help': 'the path to the SQLite3 database file'}],
@@ -50,7 +50,7 @@ def main():
     logger.info('Running v{} of {}.'.format(APP_VERSION, APP_NAME))
 
     if os.name == 'nt':
-        from counterpartylib.lib import util_windows
+        from metronoteslib.lib import util_windows
         #patch up cmd.exe's "challenged" (i.e. broken/non-existent) UTF-8 logging
         util_windows.fix_win32_unicode()
 
@@ -58,7 +58,7 @@ def main():
     generate_config_files()
 
     # Parse command-line arguments.
-    parser = argparse.ArgumentParser(prog=APP_NAME, description='Server for the {} protocol'.format(config.XCP_NAME), add_help=False)
+    parser = argparse.ArgumentParser(prog=APP_NAME, description='Server for the {} protocol'.format(config.XMN_NAME), add_help=False)
     parser.add_argument('-h', '--help', dest='help', action='store_true', help='show this help message and exit')
     parser.add_argument('-V', '--version', action='version', version="{} v{}".format(APP_NAME, APP_VERSION))
     parser.add_argument('--config-file', help='the path to the configuration file')

@@ -21,15 +21,15 @@ import urllib.request
 import shutil
 import codecs
 
-from counterpartylib.lib import log
+from metronoteslib.lib import log
 logger = logging.getLogger(__name__)
 log.set_up(logger)
 
 D = decimal.Decimal
 
-from counterpartylib import server
-from counterpartylib.lib import config
-from counterpartylib.lib.util import value_input, value_output
+from metronoteslib import server
+from metronoteslib.lib import config
+from metronoteslib.lib.util import value_input, value_output
 
 rpc_sessions = {}
 
@@ -83,7 +83,7 @@ def api(method, params=None):
     return rpc(config.COUNTERPARTY_RPC, method, params=params, ssl_verify=config.COUNTERPARTY_RPC_SSL_VERIFY)
 
 def is_divisible(asset):
-    if asset in (config.BTC, config.XCP, 'leverage', 'value', 'fraction', 'price', 'odds'):
+    if asset in (config.BTC, config.XMN, 'leverage', 'value', 'fraction', 'price', 'odds'):
         return True
     else:
         sql = '''SELECT * FROM issuances WHERE (status = ? AND asset = ?)'''
@@ -104,7 +104,7 @@ def add_config_arguments(arg_parser, config_args, default_config_file):
     cmd_args = arg_parser.parse_known_args()[0]
 
     if not cmd_args.config_file:
-        config_dir = appdirs.user_config_dir(appauthor=config.XCP_NAME, appname=config.APP_NAME, roaming=True)
+        config_dir = appdirs.user_config_dir(appauthor=config.XMN_NAME, appname=config.APP_NAME, roaming=True)
         if not os.path.isdir(config_dir):
             os.makedirs(config_dir, mode=0o755)
         cmd_args.config_file = os.path.join(config_dir, default_config_file)

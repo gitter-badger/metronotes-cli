@@ -49,8 +49,8 @@ def generate_config_file(filename, config_args, known_config={}, overwrite=False
 def extract_old_config():
     old_config = {}
 
-    old_appdir = appdirs.user_config_dir(appauthor='Counterparty', appname='counterpartyd', roaming=True)
-    old_configfile = os.path.join(old_appdir, 'counterpartyd.conf')
+    old_appdir = appdirs.user_config_dir(appauthor='Metronotes', appname='metronotesd', roaming=True)
+    old_configfile = os.path.join(old_appdir, 'metronotesd.conf')
 
     if os.path.exists(old_configfile):
         configfile = configparser.ConfigParser()
@@ -96,8 +96,8 @@ def extract_bitcoincore_config():
 
             for bitcoind_key in config_keys:
                 if bitcoind_key in conf:
-                    counterparty_key = config_keys[bitcoind_key]
-                    bitcoincore_config[counterparty_key] = conf[bitcoind_key]
+                    metronotes_key = config_keys[bitcoind_key]
+                    bitcoincore_config[metronotes_key] = conf[bitcoind_key]
 
     return bitcoincore_config
 
@@ -123,10 +123,10 @@ def server_to_client_config(server_config):
         'backend-password': 'wallet-password',
         'backend-ssl': 'wallet-ssl',
         'backend-ssl-verify': 'wallet-ssl-verify',
-        'rpc-host': 'counterparty-rpc-connect',
-        'rpc-port': 'counterparty-rpc-port',
-        'rpc-user': 'counterparty-rpc-user',
-        'rpc-password': 'counterparty-rpc-password'
+        'rpc-host': 'metronotes-rpc-connect',
+        'rpc-port': 'metronotes-rpc-port',
+        'rpc-user': 'metronotes-rpc-user',
+        'rpc-password': 'metronotes-rpc-password'
     }
 
     for server_key in config_keys:
@@ -137,11 +137,11 @@ def server_to_client_config(server_config):
     return client_config
 
 def generate_config_files():
-    from counterpartycli.server import CONFIG_ARGS as SERVER_CONFIG_ARGS
-    from counterpartycli.client import CONFIG_ARGS as CLIENT_CONFIG_ARGS
-    from counterpartylib.lib import config, util
+    from metronotescli.server import CONFIG_ARGS as SERVER_CONFIG_ARGS
+    from metronotescli.client import CONFIG_ARGS as CLIENT_CONFIG_ARGS
+    from metronoteslib.lib import config, util
 
-    configdir = appdirs.user_config_dir(appauthor=config.XCP_NAME, appname=config.APP_NAME, roaming=True)
+    configdir = appdirs.user_config_dir(appauthor=config.XMN_NAME, appname=config.APP_NAME, roaming=True)
 
     server_configfile = os.path.join(configdir, 'server.conf')
     if not os.path.exists(server_configfile):
@@ -170,8 +170,8 @@ def before_py2exe_build(win_dist_dir):
         shutil.rmtree(win_dist_dir)
     # py2exe don't manages entry_points
     for exe_name in ['client', 'server']:
-        shutil.copy('counterpartycli/__init__.py', 'counterparty-{}.py'.format(exe_name))
-        with open('counterparty-{}.py'.format(exe_name), 'a') as fp:
+        shutil.copy('metronotescli/__init__.py', 'metronotes-{}.py'.format(exe_name))
+        with open('metronotes-{}.py'.format(exe_name), 'a') as fp:
             fp.write('{}_main()'.format(exe_name))
     # Hack
     src = 'C:\\Python34\\Lib\\site-packages\\flask_httpauth.py'
@@ -181,11 +181,11 @@ def before_py2exe_build(win_dist_dir):
 def after_py2exe_build(win_dist_dir):
     # clean temporaries scripts
     for exe_name in ['client', 'server']:
-        os.remove('counterparty-{}.py'.format(exe_name))
+        os.remove('metronotes-{}.py'.format(exe_name))
     # py2exe copies only pyc files in site-packages.zip
     # modules with no pyc files must be copied in 'dist/library/'
-    import counterpartylib, certifi
-    additionals_modules = [counterpartylib, certifi]
+    import metronoteslib, certifi
+    additionals_modules = [metronoteslib, certifi]
     for module in additionals_modules:
         moudle_file = os.path.dirname(module.__file__)
         dest_file = os.path.join(win_dist_dir, 'library', module.__name__)
@@ -220,12 +220,12 @@ def after_py2exe_build(win_dist_dir):
 
 # Download bootstrap database
 def bootstrap(overwrite=True, ask_confirmation=False):
-    from counterpartylib.lib import config
+    from metronoteslib.lib import config
 
-    bootstrap_url = 'https://s3.amazonaws.com/counterparty-bootstrap/counterpartyd-db.latest.tar.gz'
-    bootstrap_url_testnet = 'https://s3.amazonaws.com/counterparty-bootstrap/counterpartyd-testnet-db.latest.tar.gz'
+    bootstrap_url = 'https://s3.amazonaws.com/metronotes-bootstrap/metronotesd-db.latest.tar.gz'
+    bootstrap_url_testnet = 'https://s3.amazonaws.com/metronotes-bootstrap/metronotesd-testnet-db.latest.tar.gz'
 
-    data_dir = appdirs.user_data_dir(appauthor=config.XCP_NAME, appname=config.APP_NAME, roaming=True)
+    data_dir = appdirs.user_data_dir(appauthor=config.XMN_NAME, appname=config.APP_NAME, roaming=True)
     database = os.path.join(data_dir, '{}.db'.format(config.APP_NAME))
     database_testnet = os.path.join(data_dir, '{}.testnet.db'.format(config.APP_NAME))
 
@@ -236,7 +236,7 @@ def bootstrap(overwrite=True, ask_confirmation=False):
         return
 
     if ask_confirmation:
-        question = 'Would you like to bootstrap your local Counterparty database from `https://s3.amazonaws.com/counterparty-bootstrap/`? (y/N): '
+        question = 'Would you like to bootstrap your local Metronotes database from `https://s3.amazonaws.com/metronotes-bootstrap/`? (y/N): '
         if input(question).lower() != 'y':
             return
 
@@ -254,24 +254,24 @@ def bootstrap(overwrite=True, ask_confirmation=False):
             sys.stderr.write("read %d\n" % (readsofar,))
 
     print('Downloading mainnet database from {}…'.format(bootstrap_url))
-    urllib.request.urlretrieve(bootstrap_url, 'counterpartyd-db.latest.tar.gz', reporthook)
+    urllib.request.urlretrieve(bootstrap_url, 'metronotesd-db.latest.tar.gz', reporthook)
     print('Extracting…')
-    with tarfile.open('counterpartyd-db.latest.tar.gz', 'r:gz') as tar_file:
+    with tarfile.open('metronotesd-db.latest.tar.gz', 'r:gz') as tar_file:
         tar_file.extractall()
-    print('Copying {} to {}…'.format('counterpartyd.9.db', database))
-    shutil.move('counterpartyd.9.db', database)
+    print('Copying {} to {}…'.format('metronotesd.9.db', database))
+    shutil.move('metronotesd.9.db', database)
     os.chmod(database, 0o660)
 
     print('Downloading testnet database from {}…'.format(bootstrap_url_testnet))
-    urllib.request.urlretrieve(bootstrap_url_testnet, 'counterpartyd-testnet-db.latest.tar.gz', reporthook)
+    urllib.request.urlretrieve(bootstrap_url_testnet, 'metronotesd-testnet-db.latest.tar.gz', reporthook)
     print('Extracting…')
-    with tarfile.open('counterpartyd-testnet-db.latest.tar.gz', 'r:gz') as tar_file:
+    with tarfile.open('metronotesd-testnet-db.latest.tar.gz', 'r:gz') as tar_file:
         tar_file.extractall()
-    print('Copying {} to {}…'.format('counterpartyd.9.testnet.db', database_testnet))
-    shutil.move('counterpartyd.9.testnet.db', database_testnet)
+    print('Copying {} to {}…'.format('metronotesd.9.testnet.db', database_testnet))
+    shutil.move('metronotesd.9.testnet.db', database_testnet)
     os.chmod(database_testnet, 0o660)
 
     # Clean files
-    os.remove('counterpartyd-db.latest.tar.gz')
-    os.remove('counterpartyd-testnet-db.latest.tar.gz')
+    os.remove('metronotesd-db.latest.tar.gz')
+    os.remove('metronotesd-testnet-db.latest.tar.gz')
     os.remove('checksums.txt')

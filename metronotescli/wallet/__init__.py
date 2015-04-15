@@ -6,11 +6,11 @@ import sys
 import json
 import time
 
-from counterpartycli.wallet import bitcoincore
-from counterpartylib.lib import config
+from metronotescli.wallet import bitcoincore
+from metronoteslib.lib import config
 
 def WALLET():
-    return sys.modules['counterpartycli.wallet.{}'.format(config.WALLET_NAME)] 
+    return sys.modules['metronotescli.wallet.{}'.format(config.WALLET_NAME)] 
 
 def get_wallet_addresses():
     return WALLET().get_wallet_addresses()

@@ -17,22 +17,22 @@ import appdirs
 from prettytable import PrettyTable
 from colorlog import ColoredFormatter
 
-from counterpartycli import util
-from counterpartycli import wallet
-from counterpartycli import APP_VERSION
-from counterpartycli.util import add_config_arguments
-from counterpartycli.setup import generate_config_files
+from metronotescli import util
+from metronotescli import wallet
+from metronotescli import APP_VERSION
+from metronotescli.util import add_config_arguments
+from metronotescli.setup import generate_config_files
 
-from counterpartylib.lib import config
-from counterpartylib.lib import script
-from counterpartylib.lib.util import make_id, BET_TYPE_NAME, BET_TYPE_ID, dhash
-from counterpartylib.lib import log
-from counterpartylib.lib.log import isodt
+from metronoteslib.lib import config
+from metronoteslib.lib import script
+from metronoteslib.lib.util import make_id, BET_TYPE_NAME, BET_TYPE_ID, dhash
+from metronoteslib.lib import log
+from metronoteslib.lib.log import isodt
 
 if os.name == 'nt':
-    from counterpartylib.lib import util_windows
+    from metronoteslib.lib import util_windows
 
-APP_NAME = 'counterparty-client'
+APP_NAME = 'metronotes-client'
 
 D = decimal.Decimal
 
@@ -41,12 +41,12 @@ logger = logging.getLogger()
 CONFIG_ARGS = [
     [('--testnet',), {'action': 'store_true', 'default': False, 'help': 'use {} testnet addresses and block numbers'.format(config.BTC_NAME)}],    
 
-    [('--counterparty-rpc-connect',), {'default': 'localhost', 'help': 'the hostname or IP of the counterparty JSON-RPC server'}],
-    [('--counterparty-rpc-port',), {'type': int, 'help': 'the counterparty JSON-RPC port to connect to'}],
-    [('--counterparty-rpc-user',), {'default': 'rpc', 'help': 'the username used to communicate with counterparty over JSON-RPC'}],
-    [('--counterparty-rpc-password',), {'help': 'the password used to communicate with counterparty over JSON-RPC'}],
-    [('--counterparty-rpc-ssl',), {'default': False, 'action': 'store_true', 'help': 'use SSL to connect to counterparty (default: false)'}],
-    [('--counterparty-rpc-ssl-verify',), {'default': False, 'action': 'store_true', 'help': 'verify SSL certificate of counterparty; disallow use of self‐signed certificates (default: false)'}],
+    [('--metronotes-rpc-connect',), {'default': 'localhost', 'help': 'the hostname or IP of the metronotes JSON-RPC server'}],
+    [('--metronotes-rpc-port',), {'type': int, 'help': 'the metronotes JSON-RPC port to connect to'}],
+    [('--metronotes-rpc-user',), {'default': 'rpc', 'help': 'the username used to communicate with metronotes over JSON-RPC'}],
+    [('--metronotes-rpc-password',), {'help': 'the password used to communicate with metronotes over JSON-RPC'}],
+    [('--metronotes-rpc-ssl',), {'default': False, 'action': 'store_true', 'help': 'use SSL to connect to metronotes (default: false)'}],
+    [('--metronotes-rpc-ssl-verify',), {'default': False, 'action': 'store_true', 'help': 'verify SSL certificate of metronotes; disallow use of self‐signed certificates (default: false)'}],
 
     [('--wallet-name',), {'default': 'bitcoincore', 'help': 'the wallet name to connect to'}],
     [('--wallet-connect',), {'default': 'localhost', 'help': 'the hostname or IP of the wallet server'}],
@@ -57,7 +57,7 @@ CONFIG_ARGS = [
     [('--wallet-ssl-verify',), {'action': 'store_true', 'default': False, 'help': 'verify SSL certificate of wallet; disallow use of self‐signed certificates (default: false)'}],
 
     [('-v', '--verbose'), {'dest': 'verbose', 'action': 'store_true', 'help': 'sets log level to DEBUG instead of WARNING'}],
-    [('--testcoin',), {'action': 'store_true', 'default': False, 'help': 'use the test {} network on every blockchain'.format(config.XCP_NAME)}],
+    [('--testcoin',), {'action': 'store_true', 'default': False, 'help': 'use the test {} network on every blockchain'.format(config.XMN_NAME)}],
     [('--unconfirmed',), {'action': 'store_true', 'default': False, 'help': 'allow the spending of unconfirmed transaction outputs'}],
     [('--encoding',), {'default': 'auto', 'type': str, 'help': 'data encoding method'}],
     [('--fee-per-kb',), {'type': D, 'default': D(config.DEFAULT_FEE_PER_KB / config.UNIT), 'help': 'fee per kilobyte, in {}'.format(config.BTC)}],
@@ -134,7 +134,7 @@ def format_bet(bet):
     else:
         leverage = util.value_out(D(bet['leverage']) / 5040, 'leverage')
 
-    return [BET_TYPE_NAME[bet['bet_type']], bet['feed_address'], isodt(bet['deadline']), target_value, leverage, str(bet['wager_remaining'] / config.UNIT) + ' XCP', util.value_out(odds, 'odds'), bet['expire_index'] - last_db_block_index(), bet['tx_hash']]
+    return [BET_TYPE_NAME[bet['bet_type']], bet['feed_address'], isodt(bet['deadline']), target_value, leverage, str(bet['wager_remaining'] / config.UNIT) + ' XMN', util.value_out(odds, 'odds'), bet['expire_index'] - last_db_block_index(), bet['tx_hash']]
 
 def format_order_match(order_match):
     order_match_id = make_id(order_match['tx0_hash'], order_match['tx1_hash'])
@@ -327,9 +327,9 @@ def cli(method, params, unsigned):
             logger.info('Hash of transaction (broadcasted): {}'.format(tx_hash))
 
 def set_options(testnet=False, testcoin=False,
-                counterparty_rpc_connect=None, counterparty_rpc_port=None, 
-                counterparty_rpc_user=None, counterparty_rpc_password=None,
-                counterparty_rpc_ssl=False, counterparty_rpc_ssl_verify=False,
+                metronotes_rpc_connect=None, metronotes_rpc_port=None, 
+                metronotes_rpc_user=None, metronotes_rpc_password=None,
+                metronotes_rpc_ssl=False, metronotes_rpc_ssl_verify=False,
                 wallet_name=None, wallet_connect=None, wallet_port=None, 
                 wallet_user=None, wallet_password=None,
                 wallet_ssl=False, wallet_ssl_verify=False):
@@ -349,12 +349,12 @@ def set_options(testnet=False, testcoin=False,
     ##############
     # THINGS WE CONNECT TO
 
-    # Counterparty server host (Bitcoin Core)
-    config.COUNTERPARTY_RPC_CONNECT = counterparty_rpc_connect or 'localhost'
+    # Metronotes server host (Bitcoin Core)
+    config.COUNTERPARTY_RPC_CONNECT = metronotes_rpc_connect or 'localhost'
 
-    # Counterparty server RPC port (Bitcoin Core)
-    if counterparty_rpc_port:
-        config.COUNTERPARTY_RPC_PORT = counterparty_rpc_port
+    # Metronotes server RPC port (Bitcoin Core)
+    if metronotes_rpc_port:
+        config.COUNTERPARTY_RPC_PORT = metronotes_rpc_port
     else:
         if config.TESTNET:
             config.COUNTERPARTY_RPC_PORT = config.DEFAULT_RPC_PORT_TESTNET
@@ -365,24 +365,24 @@ def set_options(testnet=False, testcoin=False,
         if not (int(config.COUNTERPARTY_RPC_PORT) > 1 and int(config.COUNTERPARTY_RPC_PORT) < 65535):
             raise ConfigurationError('invalid RPC port number')
     except:
-        raise Exception("Please specific a valid port number counterparty-rpc-port configuration parameter")
+        raise Exception("Please specific a valid port number metronotes-rpc-port configuration parameter")
 
-    # Counterparty server RPC user (Bitcoin Core)
-    config.COUNTERPARTY_RPC_USER = counterparty_rpc_user or 'rpc'
+    # Metronotes server RPC user (Bitcoin Core)
+    config.COUNTERPARTY_RPC_USER = metronotes_rpc_user or 'rpc'
 
-    # Counterparty server RPC password (Bitcoin Core)
-    if counterparty_rpc_password:
-        config.COUNTERPARTY_RPC_PASSWORD = counterparty_rpc_password
+    # Metronotes server RPC password (Bitcoin Core)
+    if metronotes_rpc_password:
+        config.COUNTERPARTY_RPC_PASSWORD = metronotes_rpc_password
     else:
-        raise ConfigurationError('counterparty RPC password not set. (Use configuration file or --counterparty-rpc-password=PASSWORD)')
+        raise ConfigurationError('metronotes RPC password not set. (Use configuration file or --metronotes-rpc-password=PASSWORD)')
 
-    # Counterparty server RPC SSL
-    config.COUNTERPARTY_RPC_SSL = counterparty_rpc_ssl or False  # Default to off.
+    # Metronotes server RPC SSL
+    config.COUNTERPARTY_RPC_SSL = metronotes_rpc_ssl or False  # Default to off.
 
-    # Counterparty server RPC SSL Verify
-    config.COUNTERPARTY_RPC_SSL_VERIFY = counterparty_rpc_ssl_verify or False # Default to off (support self‐signed certificates)
+    # Metronotes server RPC SSL Verify
+    config.COUNTERPARTY_RPC_SSL_VERIFY = metronotes_rpc_ssl_verify or False # Default to off (support self‐signed certificates)
 
-    # Construct Counterparty server URL.
+    # Construct Metronotes server URL.
     config.COUNTERPARTY_RPC = urlencode(config.COUNTERPARTY_RPC_USER) + ':' + urlencode(config.COUNTERPARTY_RPC_PASSWORD) + '@' + config.COUNTERPARTY_RPC_CONNECT + ':' + str(config.COUNTERPARTY_RPC_PORT)
     if config.COUNTERPARTY_RPC_SSL:
         config.COUNTERPARTY_RPC = 'https://' + config.COUNTERPARTY_RPC
@@ -496,7 +496,7 @@ def main():
     generate_config_files()
 
     # Parse command-line arguments.
-    parser = argparse.ArgumentParser(prog=APP_NAME, description='Counterparty CLI for counterparty-server', add_help=False)
+    parser = argparse.ArgumentParser(prog=APP_NAME, description='Metronotes CLI for metronotes-server', add_help=False)
     parser.add_argument('-h', '--help', dest='help', action='store_true', help='show this help message and exit')
     parser.add_argument('-V', '--version', action='version', version="{} v{}".format(APP_NAME, APP_VERSION))
     parser.add_argument('--config-file', help='the location of the configuration file')
@@ -550,8 +550,8 @@ def main():
     parser_bet.add_argument('--feed-address', required=True, help='the address which publishes the feed to bet on')
     parser_bet.add_argument('--bet-type', choices=list(BET_TYPE_NAME.values()), required=True, help='choices: {}'.format(list(BET_TYPE_NAME.values())))
     parser_bet.add_argument('--deadline', required=True, help='the date and time at which the bet should be decided/settled')
-    parser_bet.add_argument('--wager', required=True, help='the quantity of XCP to wager')
-    parser_bet.add_argument('--counterwager', required=True, help='the minimum quantity of XCP to be wagered by the user to bet against you, if he were to accept the whole thing')
+    parser_bet.add_argument('--wager', required=True, help='the quantity of XMN to wager')
+    parser_bet.add_argument('--counterwager', required=True, help='the minimum quantity of XMN to be wagered by the user to bet against you, if he were to accept the whole thing')
     parser_bet.add_argument('--target-value', default=0.0, help='target value for Equal/NotEqual bet')
     parser_bet.add_argument('--leverage', type=int, default=5040, help='leverage, as a fraction of 5040')
     parser_bet.add_argument('--expiration', type=int, required=True, help='the number of blocks for which the bet should be valid')
@@ -559,12 +559,12 @@ def main():
 
     parser_dividend = subparsers.add_parser('dividend', help='pay dividends to the holders of an asset (in proportion to their stake in it)')
     parser_dividend.add_argument('--source', required=True, help='the source address')
-    parser_dividend.add_argument('--quantity-per-unit', required=True, help='the quantity of XCP to be paid per whole unit held of ASSET')
+    parser_dividend.add_argument('--quantity-per-unit', required=True, help='the quantity of XMN to be paid per whole unit held of ASSET')
     parser_dividend.add_argument('--asset', required=True, help='the asset to which pay dividends')
     parser_dividend.add_argument('--dividend-asset', required=True, help='asset in which to pay the dividends')
     parser_dividend.add_argument('--fee', help='the exact {} fee to be paid to miners'.format(config.BTC))
 
-    parser_burn = subparsers.add_parser('burn', help='destroy {} to earn XCP, during an initial period of time')
+    parser_burn = subparsers.add_parser('burn', help='destroy {} to earn XMN, during an initial period of time')
     parser_burn.add_argument('--source', required=True, help='the source address')
     parser_burn.add_argument('--quantity', required=True, help='quantity of {} to be burned'.format(config.BTC))
     parser_burn.add_argument('--fee', help='the exact {} fee to be paid to miners'.format(config.BTC))
@@ -576,7 +576,7 @@ def main():
 
     parser_rps = subparsers.add_parser('rps', help='open a rock-paper-scissors like game')
     parser_rps.add_argument('--source', required=True, help='the source address')
-    parser_rps.add_argument('--wager', required=True, help='the quantity of XCP to wager')
+    parser_rps.add_argument('--wager', required=True, help='the quantity of XMN to wager')
     parser_rps.add_argument('--move', type=int, required=True, help='the selected move')
     parser_rps.add_argument('--possible-moves', type=int, required=True, help='the number of possible moves (odd number greater or equal than 3)')
     parser_rps.add_argument('--expiration', type=int, required=True, help='the number of blocks for which the bet should be valid')
@@ -592,8 +592,8 @@ def main():
     parser_publish = subparsers.add_parser('publish', help='publish contract code in the blockchain')
     parser_publish.add_argument('--source', required=True, help='the source address')
     parser_publish.add_argument('--gasprice', required=True, type=int, help='the price of gas')
-    parser_publish.add_argument('--startgas', required=True, type=int, help='the maximum quantity of {} to be used to pay for the execution (satoshis)'.format(config.XCP))
-    parser_publish.add_argument('--endowment', required=True, type=int, help='quantity of {} to be transfered to the contract (satoshis)'.format(config.XCP))
+    parser_publish.add_argument('--startgas', required=True, type=int, help='the maximum quantity of {} to be used to pay for the execution (satoshis)'.format(config.XMN))
+    parser_publish.add_argument('--endowment', required=True, type=int, help='quantity of {} to be transfered to the contract (satoshis)'.format(config.XMN))
     parser_publish.add_argument('--code-hex', required=True, type=str, help='the hex‐encoded contract (returned by `serpent compile`)')
     parser_publish.add_argument('--fee', help='the exact {} fee to be paid to miners'.format(config.BTC))
 
@@ -601,29 +601,29 @@ def main():
     parser_execute.add_argument('--source', required=True, help='the source address')
     parser_execute.add_argument('--contract-id', required=True, help='the contract ID of the contract to be executed')
     parser_execute.add_argument('--gasprice', required=True, type=int, help='the price of gas')
-    parser_execute.add_argument('--startgas', required=True, type=int, help='the maximum quantity of {} to be used to pay for the execution (satoshis)'.format(config.XCP))
-    parser_execute.add_argument('--value', required=True, type=int, help='quantity of {} to be transfered to the contract (satoshis)'.format(config.XCP))
+    parser_execute.add_argument('--startgas', required=True, type=int, help='the maximum quantity of {} to be used to pay for the execution (satoshis)'.format(config.XMN))
+    parser_execute.add_argument('--value', required=True, type=int, help='quantity of {} to be transfered to the contract (satoshis)'.format(config.XMN))
     parser_execute.add_argument('--payload-hex', required=True, type=str, help='data to be provided to the contract (returned by `serpent encode_datalist`)')
     parser_execute.add_argument('--fee', help='the exact {} fee to be paid to miners'.format(config.BTC))
 
-    parser_destroy = subparsers.add_parser('destroy', help='destroy a quantity of a Counterparty asset')
+    parser_destroy = subparsers.add_parser('destroy', help='destroy a quantity of a Metronotes asset')
     parser_destroy.add_argument('--source', required=True, help='the source address')
     parser_destroy.add_argument('--asset', required=True, help='the ASSET of which you would like to destroy QUANTITY')
     parser_destroy.add_argument('--quantity', required=True, help='the quantity of ASSET to destroy')
     parser_destroy.add_argument('--tag', default='', help='tag')
     parser_destroy.add_argument('--fee', help='the exact {} fee to be paid to miners'.format(config.BTC))
 
-    parser_address = subparsers.add_parser('balances', help='display the balances of a {} address'.format(config.XCP_NAME))
+    parser_address = subparsers.add_parser('balances', help='display the balances of a {} address'.format(config.XMN_NAME))
     parser_address.add_argument('address', help='the address you are interested in')
 
-    parser_asset = subparsers.add_parser('asset', help='display the basic properties of a {} asset'.format(config.XCP_NAME))
+    parser_asset = subparsers.add_parser('asset', help='display the basic properties of a {} asset'.format(config.XMN_NAME))
     parser_asset.add_argument('asset', help='the asset you are interested in')
 
-    parser_wallet = subparsers.add_parser('wallet', help='list the addresses in your backend wallet along with their balances in all {} assets'.format(config.XCP_NAME))
+    parser_wallet = subparsers.add_parser('wallet', help='list the addresses in your backend wallet along with their balances in all {} assets'.format(config.XMN_NAME))
 
     parser_pending = subparsers.add_parser('pending', help='list pending order matches awaiting {}payment from you'.format(config.BTC))
 
-    parser_market = subparsers.add_parser('market', help='fill the screen with an always up-to-date summary of the {} market'.format(config.XCP_NAME))
+    parser_market = subparsers.add_parser('market', help='fill the screen with an always up-to-date summary of the {} market'.format(config.XMN_NAME))
     parser_market.add_argument('--give-asset', help='only show orders offering to sell GIVE_ASSET')
     parser_market.add_argument('--get-asset', help='only show orders offering to buy GET_ASSET')
 
@@ -647,9 +647,9 @@ def main():
 
     # Configuration
     set_options(testnet=args.testnet, testcoin=args.testcoin,
-                counterparty_rpc_connect=args.counterparty_rpc_connect, counterparty_rpc_port=args.counterparty_rpc_port,
-                counterparty_rpc_user=args.counterparty_rpc_user, counterparty_rpc_password=args.counterparty_rpc_password,
-                counterparty_rpc_ssl=args.counterparty_rpc_ssl, counterparty_rpc_ssl_verify=args.counterparty_rpc_ssl_verify,
+                metronotes_rpc_connect=args.metronotes_rpc_connect, metronotes_rpc_port=args.metronotes_rpc_port,
+                metronotes_rpc_user=args.metronotes_rpc_user, metronotes_rpc_password=args.metronotes_rpc_password,
+                metronotes_rpc_ssl=args.metronotes_rpc_ssl, metronotes_rpc_ssl_verify=args.metronotes_rpc_ssl_verify,
                 wallet_name=args.wallet_name, wallet_connect=args.wallet_connect, wallet_port=args.wallet_port, 
                 wallet_user=args.wallet_user, wallet_password=args.wallet_password,
                 wallet_ssl=args.wallet_ssl, wallet_ssl_verify=args.wallet_ssl_verify)
@@ -761,8 +761,8 @@ def main():
         if args.fee:
             args.fee = util.value_in(args.fee, config.BTC)
         deadline = calendar.timegm(dateutil.parser.parse(args.deadline).utctimetuple())
-        wager = util.value_in(args.wager, config.XCP)
-        counterwager = util.value_in(args.counterwager, config.XCP)
+        wager = util.value_in(args.wager, config.XMN)
+        counterwager = util.value_in(args.counterwager, config.XMN)
         target_value = util.value_in(args.target_value, 'value')
         leverage = util.value_in(args.leverage, 'leverage')
 
@@ -783,7 +783,7 @@ def main():
     elif args.action == 'dividend':
         if args.fee:
             args.fee = util.value_in(args.fee, config.BTC)
-        quantity_per_unit = util.value_in(args.quantity_per_unit, config.XCP)
+        quantity_per_unit = util.value_in(args.quantity_per_unit, config.XMN)
         cli('create_dividend', {'source': args.source,
                                 'quantity_per_unit': quantity_per_unit,
                                 'asset': args.asset, 'dividend_asset':
@@ -825,7 +825,7 @@ def main():
     elif args.action == 'rps':
         if args.fee:
             args.fee = util.value_in(args.fee, 'BTC')
-        wager = util.value_in(args.wager, 'XCP')
+        wager = util.value_in(args.wager, 'XMN')
         random, move_random_hash = generate_move_random_hash(args.move)
         print('random: {}'.format(random))
         print('move_random_hash: {}'.format(move_random_hash))
@@ -871,8 +871,8 @@ def main():
     elif args.action == 'execute':
         if args.fee:
             args.fee = util.value_in(args.fee, 'BTC')
-        value = util.value_in(args.value, 'XCP')
-        startgas = util.value_in(args.startgas, 'XCP')
+        value = util.value_in(args.value, 'XMN')
+        startgas = util.value_in(args.startgas, 'XMN')
         cli('create_execute', {'source': args.source,
                                'contract_id': args.contract_id, 'gasprice':
                                args.gasprice, 'startgas': args.startgas,
