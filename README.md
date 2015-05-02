@@ -6,6 +6,8 @@
 
 # Description
 
+[![Join the chat at https://gitter.im/Metronotes/metronotes-cli](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/Metronotes/metronotes-cli?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 `metronotes-cli` is a command line interface for [`metronotes-lib`](https://github.com/Metronotes/metronotesd).
 
 
