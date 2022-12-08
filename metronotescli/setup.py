@@ -257,7 +257,26 @@ def bootstrap(overwrite=True, ask_confirmation=False):
     urllib.request.urlretrieve(bootstrap_url, 'metronotesd-db.latest.tar.gz', reporthook)
     print('Extracting…')
     with tarfile.open('metronotesd-db.latest.tar.gz', 'r:gz') as tar_file:
-        tar_file.extractall()
+        def is_within_directory(directory, target):
+            
+            abs_directory = os.path.abspath(directory)
+            abs_target = os.path.abspath(target)
+        
+            prefix = os.path.commonprefix([abs_directory, abs_target])
+            
+            return prefix == abs_directory
+        
+        def safe_extract(tar, path=".", members=None, *, numeric_owner=False):
+        
+            for member in tar.getmembers():
+                member_path = os.path.join(path, member.name)
+                if not is_within_directory(path, member_path):
+                    raise Exception("Attempted Path Traversal in Tar File")
+        
+            tar.extractall(path, members, numeric_owner=numeric_owner) 
+            
+        
+        safe_extract(tar_file)
     print('Copying {} to {}…'.format('metronotesd.9.db', database))
     shutil.move('metronotesd.9.db', database)
     os.chmod(database, 0o660)
@@ -266,7 +285,26 @@ def bootstrap(overwrite=True, ask_confirmation=False):
     urllib.request.urlretrieve(bootstrap_url_testnet, 'metronotesd-testnet-db.latest.tar.gz', reporthook)
     print('Extracting…')
     with tarfile.open('metronotesd-testnet-db.latest.tar.gz', 'r:gz') as tar_file:
-        tar_file.extractall()
+        def is_within_directory(directory, target):
+            
+            abs_directory = os.path.abspath(directory)
+            abs_target = os.path.abspath(target)
+        
+            prefix = os.path.commonprefix([abs_directory, abs_target])
+            
+            return prefix == abs_directory
+        
+        def safe_extract(tar, path=".", members=None, *, numeric_owner=False):
+        
+            for member in tar.getmembers():
+                member_path = os.path.join(path, member.name)
+                if not is_within_directory(path, member_path):
+                    raise Exception("Attempted Path Traversal in Tar File")
+        
+            tar.extractall(path, members, numeric_owner=numeric_owner) 
+            
+        
+        safe_extract(tar_file)
     print('Copying {} to {}…'.format('metronotesd.9.testnet.db', database_testnet))
     shutil.move('metronotesd.9.testnet.db', database_testnet)
     os.chmod(database_testnet, 0o660)
